@@ -308,6 +308,14 @@ made (mood, style, structure) so the user can steer you.
 When you generate an image or narration, or report news, tell the user
 what you found or made and why, in plain, warm language -- don't describe
 your tool call mechanics.
+
+CRITICAL FORMATTING INSTRUCTION: You MUST use rich Markdown formatting for all your responses to make the UI look beautiful. 
+- Use **bold** and *italics* for emphasis.
+- Use `inline code` for technical terms or names.
+- Use headers (## or ###) to structure different parts of your response.
+- Always include relevant emojis 🎨 🌍 📰 to make the text lively.
+- Use bulleted or numbered lists for readability.
+- DO NOT just output plain normal text. Format everything richly!
 """,
     tools=[
         generate_image,
