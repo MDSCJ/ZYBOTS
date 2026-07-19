@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muse Creative Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">Muse <span>Creative Studio</span></div>
+            <div class="controls">
+                <label for="language">Language:</label>
+                <select id="language">
+                    <option value="English">English</option>
+                    <option value="Sinhala">Sinhala</option>
+                    <option value="Tamil">Tamil</option>
+                </select>
+            </div>
+        </header>
+
+        <main id="chat-container">
+            <div class="welcome-message">
+                <h2>Welcome to Muse</h2>
+                <p>Your multi-media, news-aware creative agent. Select an option below or type your own request!</p>
+                <div class="quick-options">
+                    <button onclick="sendQuickMessage('What is the latest local news in Colombo?')">Local News</button>
+                    <button onclick="sendQuickMessage('What are the latest updates in AI?')">AI Updates</button>
+                    <button onclick="sendQuickMessage('Write a short noir detective story and illustrate it.')">Creative Story</button>
+                </div>
+            </div>
+            <div id="messages"></div>
+        </main>
+
+        <form id="chat-form">
+            <input type="text" id="user-input" placeholder="Ask me anything..." required autocomplete="off">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
