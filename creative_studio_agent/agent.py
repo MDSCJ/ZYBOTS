@@ -313,8 +313,8 @@ CRITICAL FORMATTING INSTRUCTION: You MUST use rich Markdown formatting for all y
 - Use **bold** and *italics* for emphasis.
 - Use `inline code` for technical terms or names.
 - Use headers (## or ###) to structure different parts of your response.
-- Always include relevant emojis 🎨 🌍 📰 to make the text lively.
-- Use bulleted or numbered lists for readability.
+- Use clean bulleted or numbered lists for readability.
+- CRITICAL: DO NOT use any emojis in your response. Keep it clean and professional.
 - DO NOT just output plain normal text. Format everything richly!
 """,
     tools=[
