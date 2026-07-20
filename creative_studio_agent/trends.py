@@ -8,7 +8,29 @@ present the extrapolation as its own creative speculation, clearly
 separated from the sourced facts.
 """
 
-from .news import _request
+import requests
+import xml.etree.ElementTree as ET
+
+def fetch_rss_query(query: str) -> dict:
+    try:
+        import urllib.parse
+        q = urllib.parse.quote_plus(query)
+        url = f"https://news.google.com/rss/search?q={q}&hl=en-US&gl=US&ceid=US:en"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        resp = requests.get(url, headers=headers, timeout=10)
+        root = ET.fromstring(resp.content)
+        articles = []
+        for item in root.findall('.//item')[:10]:
+            articles.append({
+                "title": item.findtext('title'),
+                "source": "Google News",
+                "published_at": item.findtext('pubDate'),
+                "description": item.findtext('description'),
+                "url": item.findtext('link'),
+            })
+        return {"status": "success", "count": len(articles), "articles": articles}
+    except Exception as e:
+        return {"status": "error", "message": f"RSS fetch failed: {e}"}
 
 # A few common fields mapped to search terms that surface substantive
 # coverage rather than noise. Any other field is searched as-is.
@@ -41,7 +63,4 @@ def get_field_updates(field: str = "ai") -> dict:
     """
     key = field.strip().lower()
     query = _FIELD_QUERIES.get(key, field)
-    return _request(
-        "everything",
-        {"q": query, "language": "en", "sortBy": "publishedAt"},
-    )
+    return fetch_rss_query(query)

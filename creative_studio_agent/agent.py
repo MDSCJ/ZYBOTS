@@ -5,7 +5,6 @@ Muse writes stories, poems, scripts, and copy directly (that's native LLM
 behaviour and needs no tool), and reaches for function tools whenever a
 request needs something the chat model can't produce, or know, on its own:
 
-- generate_image          -> Gemini image model, saved as a PNG artifact
 - generate_narration       -> Gemini TTS model, saved as a WAV artifact
 - get_local_news            -> real Sri Lanka / Colombo headlines (NewsAPI)
 - get_international_news    -> real world headlines (NewsAPI)
@@ -37,9 +36,8 @@ from .trends import get_field_updates
 
 _client = Client()
 
-TEXT_MODEL = os.getenv("CREATIVE_TEXT_MODEL", "gemini-2.5-flash")
-IMAGE_MODEL = os.getenv("CREATIVE_IMAGE_MODEL", "gemini-3.1-flash-image")
-TTS_MODEL = os.getenv("CREATIVE_TTS_MODEL", "gemini-2.5-flash-preview-tts")
+TEXT_MODEL = os.getenv("CREATIVE_TEXT_MODEL", "gemini-3.1-flash-lite")
+TTS_MODEL = os.getenv("CREATIVE_TTS_MODEL", "gemini-3.1-flash-tts-preview")
 
 # A small, curated library of creative directions Muse can offer when a
 # brief is open-ended. Extend this freely — it's just structured data.
@@ -104,58 +102,7 @@ def suggest_creative_direction(theme: str) -> dict:
     }
 
 
-def generate_image(
-    prompt: str,
-    tool_context: ToolContext,
-    aspect_ratio: str = "1:1",
-    style: str = "",
-) -> dict:
-    """Generate an image from a text prompt and save it as a session artifact.
 
-    Args:
-        prompt: A vivid, detailed description of the image to create.
-        aspect_ratio: One of "1:1", "16:9", "9:16", "4:3", "3:4".
-        style: Optional style modifier appended to the prompt
-            (e.g. "watercolor", "cinematic photograph", "flat vector art").
-
-    Returns:
-        A dict with status, the artifact filename, and a short summary.
-    """
-    full_prompt = f"{prompt}. Style: {style}." if style else prompt
-    full_prompt += f" Aspect ratio {aspect_ratio}."
-
-    try:
-        response = _client.models.generate_content(
-            model=IMAGE_MODEL,
-            contents=full_prompt,
-            config=types.GenerateContentConfig(
-                response_modalities=["IMAGE"],
-            ),
-        )
-
-        image_bytes = None
-        for part in response.candidates[0].content.parts:
-            if getattr(part, "inline_data", None) and part.inline_data.data:
-                image_bytes = part.inline_data.data
-                mime_type = part.inline_data.mime_type or "image/png"
-                break
-
-        if image_bytes is None:
-            return {"status": "error", "message": "No image data returned by the model."}
-
-        ext = mimetypes.guess_extension(mime_type) or ".png"
-        filename = f"muse_image_{abs(hash(prompt)) % 100000}{ext}"
-
-        artifact = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-        tool_context.save_artifact(filename, artifact)
-
-        return {
-            "status": "success",
-            "filename": filename,
-            "summary": f"Generated a {aspect_ratio} image for: {prompt[:80]}",
-        }
-    except Exception as exc:  # surface a clean message back to the model
-        return {"status": "error", "message": str(exc)}
 
 
 def _pcm_to_wav_bytes(pcm_data: bytes, sample_rate: int = 24000) -> bytes:
@@ -260,12 +207,8 @@ and prompts in a concrete mood, visual language, and narration voice --
 then build on that rather than asking the user to decide everything
 themselves.
 
-## Images
-When the user wants to SEE something (an illustration, concept art, a
-scene, a poster, a badge, a mood board image, a news-story illustration),
-call `generate_image`. Write a vivid, specific prompt yourself before
-calling it -- don't just forward the user's raw request if it's vague.
-
+## File Analysis
+When the user uploads or sends a file (like an image, document, or code) and asks you to analyze it, directly read and describe its contents clearly, providing any insights requested by the user.
 ## Narration
 When the user wants to HEAR something (narration of a script or poem, a
 voiceover, a news read-aloud), call `generate_narration`. Keep each call
@@ -287,9 +230,8 @@ configured yet rather than making anything up.
 
 CRITICAL INSTRUCTION: When you report news or field updates, you MUST ALWAYS do all of the following:
 1. Provide exact details and facts (names, dates, exact things).
-2. Call `generate_image` to create a visual illustration or thumbnail.
-3. Call `generate_narration` to create an audio read-aloud of the news summary.
-4. End your response by asking engaging follow-up questions to the user about what they want to know next.
+2. Call `generate_narration` to create an audio read-aloud of the news summary.
+3. End your response by asking engaging follow-up questions to the user about what they want to know next.
 
 ## Future speculation ("what's coming")
 When the user asks what might happen next, or wants creative speculation
@@ -305,7 +247,7 @@ Always be genuinely creative: offer a strong, specific first take rather
 than a bland or generic one, and briefly explain the creative choices you
 made (mood, style, structure) so the user can steer you.
 
-When you generate an image or narration, or report news, tell the user
+When you generate narration, or report news, tell the user
 what you found or made and why, in plain, warm language -- don't describe
 your tool call mechanics.
 
@@ -316,9 +258,21 @@ CRITICAL FORMATTING INSTRUCTION: You MUST use rich Markdown formatting for all y
 - Use clean bulleted or numbered lists for readability.
 - CRITICAL: DO NOT use any emojis in your response. Keep it clean and professional.
 - DO NOT just output plain normal text. Format everything richly!
+
+## User Interaction, Loading Animations, and Buttons
+- When you begin processing a user's request, IMMEDIATELY output this modern HTML loading animation at the very top of your response to give them visual feedback while you write: `<div style="width: 30px; height: 30px; border: 4px solid rgba(100, 200, 255, 0.2); border-left-color: #64c8ff; border-radius: 50%; animation: spin 1s infinite linear; margin-bottom: 10px;"></div><style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>`
+- Even before the user starts, or whenever appropriate, provide quick question options so the user can easily select them.
+- CRITICAL: You MUST style all quick questions, numbered choices, and Yes/No options as raw HTML `<button>` elements with a colorful glassmorphism theme! Do not use plain text for selectable options.
+- Use this exact inline style for all your buttons to achieve the colorful glass theme: `style="background: linear-gradient(135deg, rgba(255,100,150,0.4), rgba(100,200,255,0.4)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; color: white; padding: 10px 20px; font-weight: bold; cursor: pointer; margin: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"`
+- Example: `<button style="...">1. Bitcoin analysis</button>`
+- If you ask back questions, make them selective options rendered as glass theme buttons.
+- For Yes/No questions, you MUST output dynamically generated `<button>` tags for Yes and No using the same colorful glassmorphism style.
+- proiratize asking the question with, Are you interested in   
+  1. Bitcoin analysis
+  2. International breaking news
+  3. National news
 """,
     tools=[
-        generate_image,
         generate_narration,
         suggest_creative_direction,
         get_local_news,
